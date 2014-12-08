@@ -11,9 +11,10 @@ private:
 
 public:
 	User(int = 0, int = 0, int = 0, int = 0, int = 0);
-	void setLevel(int);
-	void setExp(int);
-	void setLoveca(int);
+	User(std::ifstream&);
+	void setLevel();
+	void setExp();
+	void setLoveca();
 	void setEP();
 	void setTokens();
 	void setAll();

@@ -31,90 +31,15 @@ Function will do the following
 
 using namespace std;
 
-int rankToInt(char);
+void getScoreCombo(char&, char&);
+void scoreComboCheck(char&);
+void getDifficulty(string&, bool&);
+void difficultyCheck(string&);
 
-int pointsPerGame(string difficulty, char score, char combo)
-{
-	int easy[5][5] = { { 65, 64, 62, 61, 60 },
-	{ 64, 62, 61, 60, 59 },
-	{ 62, 61, 60, 59, 58 },
-	{ 59, 58, 57, 56, 55 },
-	{ 56, 55, 54, 53, 52 } };
-	int normal[5][5] = { { 140, 138, 135, 132, 130 },
-	{ 135, 133, 130, 127, 125 },
-	{ 130, 128, 125, 123, 120 },
-	{ 124, 121, 119, 116, 114 },
-	{ 117, 115, 113, 110, 108 } };
-	int hard[5][5] = { { 233, 227, 220, 216, 211 },
-	{ 223, 216, 210, 206, 202 },
-	{ 212, 206, 200, 196, 192 },
-	{ 201, 196, 190, 186, 182 },
-	{ 191, 185, 180, 176, 173 } };
-	int expert[5][5] = { { 404, 393, 371, 363, 356 },
-	{ 386, 375, 354, 347, 340 },
-	{ 364, 354, 334, 327, 321 },
-	{ 346, 336, 317, 311, 305 },
-	{ 328, 319, 301, 295, 289 } };
-
-	if(difficulty.compare("Easy")) return easy[rankToInt(score)][rankToInt(combo)];
-	else if(difficulty.compare("Normal")) return normal[rankToInt(score)][rankToInt(combo)];
-	else if(difficulty.compare("Hard")) return hard[rankToInt(score)][rankToInt(combo)];
-	else if(difficulty.compare("Expert")) return expert[rankToInt(score)][rankToInt(combo)];
-	else return -1;
-}
-
-int cost(string difficulty, bool fourx) 
-{
-	int cost = 0;
-	if(difficulty.compare("Easy")) cost = 15;
-	else if(difficulty.compare("Normal")) cost = 30;
-	else if(difficulty.compare("Hard")) cost = 40;
-	else if(difficulty.compare("Expert")) cost = 75;
-	else cost = -1;
-	
-	if (fourx) cost *= 4;
-	
-	return cost;
-}
-
-bool tooHard(string difficulty, char score, char combo)
-{
-	int easy[5][5] = {  { 1, 1, 1, 1, 1 },
-						{ 1, 1, 1, 1, 1 },
-						{ 1, 1, 1, 1, 1 },
-						{ 1, 1, 1, 1, 1 },
-						{ 1, 1, 1, 1, 1 } };
-	int normal[5][5] = { { 1, 1, 1, 1 },
-	{ 1, 1 } };
-	int hard[5][5] = { { 1, 1, 1, 1, 1 },
-	{ 1, 1 },
-	{ 1 } };
-	int expert[5][5] = { { 1, 1 } };
-	
-	if(difficulty.compare("Easy")) return easy[rankToInt(score)][rankToInt(combo)];
-	else if(difficulty.compare("Normal")) return normal[rankToInt(score)][rankToInt(combo)];
-	else if(difficulty.compare("Hard")) return hard[rankToInt(score)][rankToInt(combo)];
-	else if(difficulty.compare("Expert")) return expert[rankToInt(score)][rankToInt(combo)];
-	else return -1;
-
-}
-
-int rankToInt(char rank)
-{
-	int intConversion;
-	
-	if (rank == 'S') intConversion = 0;
-	else if (rank == 'A') intConversion = 1;
-	else if (rank == 'B') intConversion = 2;
-	else if (rank == 'C') intConversion = 3;
-	else if (rank == 'N') intConversion = 4;
-
-	return intConversion;
-}
+int cost(string, bool);
+bool efficient(string, char, char);
 
 void printMenu();
-void scoreComboCheck(char&);
-void getScoreCombo(char&, char&);
 void printResult(string, char, char, int, int, int);
 
 void epCalculator(User profile)
@@ -124,6 +49,7 @@ void epCalculator(User profile)
 	string difficulty;
 	char score, combo;
 	int timesPlayed, eventEnd, tokenEnd;
+
 
 	while (navigation != 'q')
 	{
@@ -138,23 +64,8 @@ void epCalculator(User profile)
 
 		case '2': // Default case
 			// Input for Difficulty and multiplier
-
-			cout << endl << "Enter the Event Song difficulty (Easy, Normal, Hard, Expert): ";
-			cin >> difficulty;
-			stringFormatter(difficulty);
-
-			if ((difficulty.compare("Easy") && difficulty.compare("Normal")) && (difficulty.compare("Hard") && difficulty.compare("Expert")))
-			{
-				cout << "Not a valid difficulty! Please try again." << endl << endl;
-				navigation = '2';
-				continue;
-			}
-			// Loop in case bad entry
-
-			cout << "Will you be playing the 4x Event Song to grind (y/n)" << endl;
-			if (_getch() == 'y') multiplier = true;
-			else multiplier = false;
-
+			getDifficulty(difficulty, multiplier);
+			
 		case '3':
 			// Score/Combo
 			getScoreCombo(score, combo);
@@ -162,36 +73,29 @@ void epCalculator(User profile)
 		case 'c':
 			// calculations
 			timesPlayed = profile.getTokens() / cost(difficulty, multiplier);
-			eventEnd = profile.getEP() + (pointsPerGame(difficulty, score, combo) * timesPlayed);
+			eventEnd = profile.getEP() + (pointsPerGame(difficulty, score, combo, multiplier) * timesPlayed);
 			tokenEnd = profile.getTokens() - (cost(difficulty, multiplier) * timesPlayed);
 
-			cout << "\n********************************************************************";
+			cout << endl << "********************************************************************" << endl;
 
 			// Display
 		case 'd':
 			printResult(difficulty, score, combo, timesPlayed, tokenEnd, eventEnd);
-			if (tooHard(difficulty, score, combo)) cout << endl << "** Try a lower difficulty or higher Score/Combo to get more points per token **" << endl << endl;
+			if (!efficient(difficulty, score, combo)) cout << "** Try a lower difficulty or higher Score/Combo to get more points per token **" << endl << endl;
 
 			printMenu();
 
 		case 'o':
 			cout << endl << "Enter your selection: ";
 			navigation = _getch();
-			cout << "\n********************************************************************\n";
+			cout << endl << "********************************************************************" << endl;
 			break;
 
 		default:
-			cout << "Not a valid option. ";
+			cout << endl << "Not a valid option. ";
 			navigation = 'o';
 		}
 	}
-}
-
-void printMenu() {
-			cout << "Enter 1 to re-enter your current token and event point totals" << endl
-				<< "Enter 2 to choose a different difficulty" << endl
-				<< "Enter 3 to choose a different song score/combo level" << endl
-				<< "Enter q to exit the calculator." << endl;
 }
 
 void getScoreCombo(char& score, char& combo)
@@ -211,12 +115,83 @@ void scoreComboCheck(char& check)
 {
 	while (check != 'S' && check != 'A' && check != 'B' && check != 'C' && check != 'N')
 	{
-		cout << endl << "Please enter a valid option: ";
-		check = _getch();
+		cout << endl << "Please enter a valid option" << endl;
+		check = toupper(_getch());
 	}
+}
+
+void getDifficulty(string& difficulty, bool& multiplier)
+{	
+
+	cout << endl << "Enter the Event Song difficulty (Easy, Normal, Hard, Expert): ";
+	cin >> difficulty;
+	stringFormatter(difficulty);
+	difficultyCheck(difficulty);	// Loop in case bad entry
+		
+	cout << "Will you be playing the 4x Event Song to grind (y/n)" << endl;
+	if (_getch() == 'y') multiplier = true;
+	else multiplier = false;
+}
+
+void difficultyCheck(string& difficulty)
+{	
+
+		while ((difficulty.compare("Easy") && difficulty.compare("Normal") && difficulty.compare("Hard") && difficulty.compare("Expert")))
+		{
+			cout << "Not a valid difficulty! Please try again: " << endl; 
+			cin >> difficulty;
+			stringFormatter(difficulty);
+		}
+	
+}
+
+void printMenu() {
+			cout << "Enter 1 to re-enter your current token and event point totals" << endl
+				<< "Enter 2 to choose a different difficulty" << endl
+				<< "Enter 3 to choose a different song score/combo level" << endl
+				<< "Enter q to exit the calculator." << endl;
 }
 
 void printResult(string difficulty, char score, char combo, int timesPlayed, int tokenEnd, int eventEnd)
 {
+	cout << endl << endl << "Difficulty: " << difficulty << "\t" << "Score: " << score 
+		 << "\t" << "Combo: " << combo << endl;
+	cout << endl << "Plays: " << timesPlayed << "\t" << "Tokens Left: " << setw(3) << tokenEnd << "\t"
+		 << "Event Points: " << eventEnd << endl << endl;
 }
 
+int cost(string difficulty, bool fourx) 
+{
+	int cost = 0;
+	if(!difficulty.compare("Easy")) cost = 15;
+	else if(!difficulty.compare("Normal")) cost = 30;
+	else if(!difficulty.compare("Hard")) cost = 40;
+	else if(!difficulty.compare("Expert")) cost = 75;
+	else cost = -1;
+	
+	if (fourx) cost *= 4;
+	
+	return cost;
+}
+
+bool efficient(string difficulty, char score, char combo)
+{
+	int easy[5][5] = {  { 1, 1, 1, 1, 1 },
+						{ 1, 1, 1, 1, 1 },
+						{ 1, 1, 1, 1, 1 },
+						{ 1, 1, 1, 1, 1 },
+						{ 1, 1, 1, 1, 1 } };
+	int normal[5][5] = { { 1, 1, 1, 1 },
+	{ 1, 1 } };
+	int hard[5][5] = { { 1, 1, 1, 1, 1 },
+	{ 1, 1 },
+	{ 1 } };
+	int expert[5][5] = { { 1, 1 } };
+	
+	if(!difficulty.compare("Easy")) return easy[rankToInt(score)][rankToInt(combo)];
+	else if(!difficulty.compare("Normal")) return normal[rankToInt(score)][rankToInt(combo)];
+	else if(!difficulty.compare("Hard")) return hard[rankToInt(score)][rankToInt(combo)];
+	else if(!difficulty.compare("Expert")) return expert[rankToInt(score)][rankToInt(combo)];
+	else exit(5);
+
+}
